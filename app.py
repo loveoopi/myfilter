@@ -16,27 +16,28 @@ logger = logging.getLogger(__name__)
 # Dictionary to store filters {trigger_word: response}
 filters_dict = {}
 
-def is_admin(update, context):
-    """Check if the user is an admin in the chat"""
+# Authorized user ID
+AUTHORIZED_USER_ID = 6717909593
+
+def is_authorized_user(update, context):
+    """Check if the user is the authorized user"""
     user_id = update.message.from_user.id
-    chat_id = update.message.chat_id
-    try:
-        member = context.bot.get_chat_member(chat_id, user_id)
-        return member.status in ['administrator', 'creator']
-    except Exception as e:
-        logger.error(f"Error checking admin status: {e}")
-        return False
+    return user_id == AUTHORIZED_USER_ID
 
 # Command handlers
 def start(update, context):
-    """Start command - only for admins"""
-    if not is_admin(update, context):
-        update.message.reply_text("🚫 Only admins can use this command!")
+    """Start command - only for authorized user"""
+    if not is_authorized_user(update, context):
+        update.message.reply_text("🚫 You are not authorized to use this command!")
         return
     update.message.reply_text('Hi! I am your filter bot. Use /filterr to add new filters.')
 
 def add_filter(update, context):
-    """Add a new filter when user replies to a message with /filterr trigger"""
+    """Add a new filter when authorized user replies to a message with /filterr trigger"""
+    if not is_authorized_user(update, context):
+        update.message.reply_text("🚫 You are not authorized to use this command!")
+        return
+    
     reply = update.message.reply_to_message
     if not reply:
         update.message.reply_text('You need to reply to a message to set a filter!')
@@ -54,9 +55,9 @@ def add_filter(update, context):
     update.message.reply_text(f'✅ Filter "{trigger}" added successfully!')
 
 def stop_all(update, context):
-    """Remove all filters - only for admins"""
-    if not is_admin(update, context):
-        update.message.reply_text("🚫 Only admins can use this command!")
+    """Remove all filters - only for authorized user"""
+    if not is_authorized_user(update, context):
+        update.message.reply_text("🚫 You are not authorized to use this command!")
         return
     
     global filters_dict
@@ -69,7 +70,11 @@ def stop_all(update, context):
     update.message.reply_text(f'🗑️ Removed all {count} filters!')
 
 def list_filters(update, context):
-    """List all active filters"""
+    """List all active filters - only for authorized user"""
+    if not is_authorized_user(update, context):
+        update.message.reply_text("🚫 You are not authorized to use this command!")
+        return
+    
     if not filters_dict:
         update.message.reply_text('No active filters!')
         return
@@ -109,7 +114,7 @@ def run_http_server():
 
 def run_bot():
     """Run the Telegram bot"""
-    token = "7739776179:AAFpdJJn9VtktqClyaRJe91d1RcjUYCqN5k"
+    token = "8323688902:AAHnf09xEGuaE7LvVgz2MdUbAGMZbnux3A8"
     
     updater = Updater(token, use_context=True)
     dp = updater.dispatcher
