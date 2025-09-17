@@ -109,7 +109,7 @@ def run_http_server():
 
 def run_bot():
     """Run the Telegram bot"""
-    token = "8323688902:AAHnf09xEGuaE7LvVgz2MdUbAGMZbnux3A8"
+    token = "7739776179:AAFpdJJn9VtktqClyaRJe91d1RcjUYCqN5k"
     
     updater = Updater(token, use_context=True)
     dp = updater.dispatcher
