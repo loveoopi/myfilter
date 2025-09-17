@@ -1,5 +1,6 @@
 import os
 import logging
+import re
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import Update
 import threading
@@ -59,8 +60,13 @@ def list_filters(update, context):
 def handle_message(update, context):
     """Check messages for triggers and respond accordingly"""
     message_text = update.message.text.lower()
-    if message_text in filters_dict:
-        update.message.reply_text(filters_dict[message_text])
+    
+    # Check if any trigger word exists in the message (as a whole word or part of a word)
+    for trigger in filters_dict:
+        # Use regex to find the trigger word anywhere in the message
+        if re.search(r'\b' + re.escape(trigger) + r'\b', message_text):
+            update.message.reply_text(filters_dict[trigger])
+            break  # Only respond to the first match
 
 def error(update, context):
     """Log Errors caused by Updates."""
@@ -87,7 +93,7 @@ def run_http_server():
 def run_bot():
     """Run the Telegram bot"""
     # Your bot token
-    token = "8323688902:AAHnf09xEGuaE7LvVgz2MdUbAGMZbnux3A8"
+    token = "8323688902:AAHPzoJ4DIFd2MnZgcOB_cUAf1BhWzpNHrs"
     
     # Create Updater
     updater = Updater(token, use_context=True)
