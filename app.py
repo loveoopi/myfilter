@@ -2,8 +2,8 @@ import os
 import logging
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import Update
-from flask import Flask
 import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 # Enable logging
 logging.basicConfig(
@@ -14,17 +14,6 @@ logger = logging.getLogger(__name__)
 
 # Dictionary to store filters {trigger_word: response}
 filters_dict = {}
-
-# Initialize Flask app for Heroku
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Telegram Filter Bot is running!"
-
-@app.route('/health')
-def health():
-    return "OK", 200
 
 # Command handlers
 def start(update, context):
@@ -77,6 +66,24 @@ def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(b'Telegram Bot is running!')
+    
+    def log_message(self, format, *args):
+        # Disable logging for HTTP requests
+        return
+
+def run_http_server():
+    """Run a simple HTTP server to satisfy Heroku's requirements"""
+    port = int(os.environ.get('PORT', 5000))
+    server = HTTPServer(('0.0.0.0', port), SimpleHTTPRequestHandler)
+    print(f"HTTP server running on port {port}")
+    server.serve_forever()
+
 def run_bot():
     """Run the Telegram bot"""
     # Your bot token
@@ -106,11 +113,10 @@ def run_bot():
     updater.idle()
 
 if __name__ == '__main__':
-    # Start the bot in a separate thread
-    bot_thread = threading.Thread(target=run_bot)
-    bot_thread.daemon = True
-    bot_thread.start()
+    # Start the HTTP server in a separate thread
+    http_thread = threading.Thread(target=run_http_server)
+    http_thread.daemon = True
+    http_thread.start()
     
-    # Start the Flask web server in the main thread
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+    # Run the bot in the main thread
+    run_bot()
