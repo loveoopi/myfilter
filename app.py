@@ -1,9 +1,9 @@
 import os
 import logging
-import threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import Update
+from flask import Flask
+import threading
 
 # Enable logging
 logging.basicConfig(
@@ -14,6 +14,17 @@ logger = logging.getLogger(__name__)
 
 # Dictionary to store filters {trigger_word: response}
 filters_dict = {}
+
+# Initialize Flask app for Heroku
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Telegram Filter Bot is running!"
+
+@app.route('/health')
+def health():
+    return "OK", 200
 
 # Command handlers
 def start(update, context):
@@ -66,21 +77,8 @@ def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
-class MyHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        self.wfile.write(b"Bot is alive!")
-        return
-
-def run_http_server():
-    port = int(os.environ.get('PORT', 5000))
-    server = HTTPServer(('0.0.0.0', port), MyHandler)
-    print('HTTP server running on port', port)
-    server.serve_forever()
-
 def run_bot():
+    """Run the Telegram bot"""
     # Your bot token
     token = "8323688902:AAHPzoJ4DIFd2MnZgcOB_cUAf1BhWzpNHrs"
     
@@ -108,10 +106,11 @@ def run_bot():
     updater.idle()
 
 if __name__ == '__main__':
-    # Start the HTTP server in a daemon thread
-    http_thread = threading.Thread(target=run_http_server)
-    http_thread.daemon = True
-    http_thread.start()
-
-    # Run the bot in the main thread
-    run_bot()
+    # Start the bot in a separate thread
+    bot_thread = threading.Thread(target=run_bot)
+    bot_thread.daemon = True
+    bot_thread.start()
+    
+    # Start the Flask web server in the main thread
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
