@@ -35,7 +35,9 @@ def add_filter(update, context):
     
     response = reply.text
     filters_dict[trigger] = response
-    update.message.reply_text(f'Filter added!\nTrigger: {trigger}\nResponse: {response}')
+    
+    # Simplified confirmation message
+    update.message.reply_text(f'✅ Filter "{trigger}" added successfully!')
 
 def stop_all(update, context):
     """Remove all filters"""
@@ -46,7 +48,7 @@ def stop_all(update, context):
     
     count = len(filters_dict)
     filters_dict = {}
-    update.message.reply_text(f'Removed all {count} filters!')
+    update.message.reply_text(f'🗑️ Removed all {count} filters!')
 
 def list_filters(update, context):
     """List all active filters"""
@@ -54,7 +56,7 @@ def list_filters(update, context):
         update.message.reply_text('No active filters!')
         return
     
-    filters_list = "\n".join([f"• {trigger}: {response}" for trigger, response in filters_dict.items()])
+    filters_list = "\n".join([f"• {trigger}" for trigger in filters_dict.keys()])
     update.message.reply_text(f"Active filters:\n{filters_list}")
 
 def handle_message(update, context):
@@ -92,7 +94,7 @@ def run_http_server():
 
 def run_bot():
     """Run the Telegram bot"""
-    # Your bot token
+    # Your bot token (hardcoded as requested)
     token = "8323688902:AAHnf09xEGuaE7LvVgz2MdUbAGMZbnux3A8"
     
     # Create Updater
