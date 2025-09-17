@@ -16,8 +16,23 @@ logger = logging.getLogger(__name__)
 # Dictionary to store filters {trigger_word: response}
 filters_dict = {}
 
+def is_admin(update, context):
+    """Check if the user is an admin in the chat"""
+    user_id = update.message.from_user.id
+    chat_id = update.message.chat_id
+    try:
+        member = context.bot.get_chat_member(chat_id, user_id)
+        return member.status in ['administrator', 'creator']
+    except Exception as e:
+        logger.error(f"Error checking admin status: {e}")
+        return False
+
 # Command handlers
 def start(update, context):
+    """Start command - only for admins"""
+    if not is_admin(update, context):
+        update.message.reply_text("🚫 Only admins can use this command!")
+        return
     update.message.reply_text('Hi! I am your filter bot. Use /filterr to add new filters.')
 
 def add_filter(update, context):
@@ -36,11 +51,14 @@ def add_filter(update, context):
     response = reply.text
     filters_dict[trigger] = response
     
-    # Simplified confirmation message
     update.message.reply_text(f'✅ Filter "{trigger}" added successfully!')
 
 def stop_all(update, context):
-    """Remove all filters"""
+    """Remove all filters - only for admins"""
+    if not is_admin(update, context):
+        update.message.reply_text("🚫 Only admins can use this command!")
+        return
+    
     global filters_dict
     if not filters_dict:
         update.message.reply_text('No filters to remove!')
@@ -63,12 +81,10 @@ def handle_message(update, context):
     """Check messages for triggers and respond accordingly"""
     message_text = update.message.text.lower()
     
-    # Check if any trigger word exists in the message (as a whole word or part of a word)
     for trigger in filters_dict:
-        # Use regex to find the trigger word anywhere in the message
         if re.search(r'\b' + re.escape(trigger) + r'\b', message_text):
             update.message.reply_text(filters_dict[trigger])
-            break  # Only respond to the first match
+            break
 
 def error(update, context):
     """Log Errors caused by Updates."""
@@ -82,7 +98,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(b'Telegram Bot is running!')
     
     def log_message(self, format, *args):
-        # Disable logging for HTTP requests
         return
 
 def run_http_server():
@@ -94,37 +109,25 @@ def run_http_server():
 
 def run_bot():
     """Run the Telegram bot"""
-    # Your bot token (hardcoded as requested)
     token = "8323688902:AAHnf09xEGuaE7LvVgz2MdUbAGMZbnux3A8"
     
-    # Create Updater
     updater = Updater(token, use_context=True)
-
-    # Get dispatcher to register handlers
     dp = updater.dispatcher
 
-    # Add command handlers
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("filterr", add_filter))
     dp.add_handler(CommandHandler("stopalll", stop_all))
     dp.add_handler(CommandHandler("list", list_filters))
-
-    # Add message handler
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-
-    # Log all errors
     dp.add_error_handler(error)
 
-    # Start the Bot
     print("Bot started...")
     updater.start_polling()
     updater.idle()
 
 if __name__ == '__main__':
-    # Start the HTTP server in a separate thread
     http_thread = threading.Thread(target=run_http_server)
     http_thread.daemon = True
     http_thread.start()
     
-    # Run the bot in the main thread
     run_bot()
