@@ -2,7 +2,6 @@ import os
 import logging
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import Update
-from flask import Flask
 
 # Enable logging
 logging.basicConfig(
@@ -13,13 +12,6 @@ logger = logging.getLogger(__name__)
 
 # Dictionary to store filters {trigger_word: response}
 filters_dict = {}
-
-# Initialize Flask app for Heroku
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Telegram Filter Bot is running!"
 
 # Command handlers
 def start(update, context):
@@ -73,7 +65,7 @@ def error(update, context):
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 def main():
-    # Your bot token (included directly in code as requested)
+    # Your bot token
     token = "8323688902:AAHPzoJ4DIFd2MnZgcOB_cUAf1BhWzpNHrs"
     
     # Create Updater
@@ -94,16 +86,9 @@ def main():
     # Log all errors
     dp.add_error_handler(error)
 
-    # Start the Bot - use webhook for Heroku
-    port = int(os.environ.get('PORT', 8443))
-    app_name = "your-telegram-filter-bot"  # Change this to your Heroku app name
-    
-    updater.start_webhook(
-        listen="0.0.0.0",
-        port=port,
-        url_path=token,
-        webhook_url=f"https://{app_name}.herokuapp.com/{token}"
-    )
+    # Start the Bot
+    print("Bot started...")
+    updater.start_polling()
     updater.idle()
 
 if __name__ == '__main__':
