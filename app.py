@@ -1,5 +1,7 @@
 import os
 import logging
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import Update
 
@@ -64,7 +66,21 @@ def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
-def main():
+class MyHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(b"Bot is alive!")
+        return
+
+def run_http_server():
+    port = int(os.environ.get('PORT', 5000))
+    server = HTTPServer(('0.0.0.0', port), MyHandler)
+    print('HTTP server running on port', port)
+    server.serve_forever()
+
+def run_bot():
     # Your bot token
     token = "8323688902:AAHPzoJ4DIFd2MnZgcOB_cUAf1BhWzpNHrs"
     
@@ -92,4 +108,10 @@ def main():
     updater.idle()
 
 if __name__ == '__main__':
-    main()
+    # Start the HTTP server in a daemon thread
+    http_thread = threading.Thread(target=run_http_server)
+    http_thread.daemon = True
+    http_thread.start()
+
+    # Run the bot in the main thread
+    run_bot()
