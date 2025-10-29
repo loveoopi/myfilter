@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 filters_dict = {}
 
 # Authorized user ID
-AUTHORIZED_USER_ID = 6717909593
+AUTHORIZED_USER_ID = 7598086737
 
 def is_authorized_user(update, context):
     """Check if the user is the authorized user"""
@@ -114,7 +114,7 @@ def run_http_server():
 
 def run_bot():
     """Run the Telegram bot"""
-    token = "8323688902:AAHnf09xEGuaE7LvVgz2MdUbAGMZbnux3A8"
+    token = "8424898200:AAFckSGPxdPczl3QErbIluCEd0Edw1xNsYE"
     
     updater = Updater(token, use_context=True)
     dp = updater.dispatcher
