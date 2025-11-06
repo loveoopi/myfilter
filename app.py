@@ -1,12 +1,13 @@
 import os
 import logging
 import re
-import requests
 import threading
 import time
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import Update
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.request import urlopen
+from urllib.error import URLError
 
 # Enable logging
 logging.basicConfig(
@@ -111,12 +112,14 @@ def ping_server():
     """Ping the server every 20 minutes to prevent Heroku from sleeping"""
     while True:
         try:
-            # Get the Heroku app URL from environment variable or use a default
+            # Get the Heroku app URL from environment variable
             app_url = os.environ.get('APP_URL', 'https://your-app-name.herokuapp.com')
-            response = requests.get(app_url, timeout=10)
-            logger.info(f"Pinged server successfully - Status: {response.status_code}")
-        except Exception as e:
+            response = urlopen(app_url, timeout=10)
+            logger.info(f"Pinged server successfully - Status: {response.getcode()}")
+        except URLError as e:
             logger.error(f"Ping failed: {e}")
+        except Exception as e:
+            logger.error(f"Ping error: {e}")
         
         # Wait 20 minutes before next ping (Heroku idles after 30 minutes of inactivity)
         time.sleep(1200)  # 20 minutes = 1200 seconds
