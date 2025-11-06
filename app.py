@@ -1,9 +1,11 @@
 import os
 import logging
 import re
+import requests
+import threading
+import time
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import Update
-import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 # Enable logging
@@ -105,6 +107,20 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         return
 
+def ping_server():
+    """Ping the server every 20 minutes to prevent Heroku from sleeping"""
+    while True:
+        try:
+            # Get the Heroku app URL from environment variable or use a default
+            app_url = os.environ.get('APP_URL', 'https://your-app-name.herokuapp.com')
+            response = requests.get(app_url, timeout=10)
+            logger.info(f"Pinged server successfully - Status: {response.status_code}")
+        except Exception as e:
+            logger.error(f"Ping failed: {e}")
+        
+        # Wait 20 minutes before next ping (Heroku idles after 30 minutes of inactivity)
+        time.sleep(1200)  # 20 minutes = 1200 seconds
+
 def run_http_server():
     """Run a simple HTTP server to satisfy Heroku's requirements"""
     port = int(os.environ.get('PORT', 5000))
@@ -131,8 +147,15 @@ def run_bot():
     updater.idle()
 
 if __name__ == '__main__':
+    # Start HTTP server
     http_thread = threading.Thread(target=run_http_server)
     http_thread.daemon = True
     http_thread.start()
     
+    # Start ping service to prevent sleeping
+    ping_thread = threading.Thread(target=ping_server)
+    ping_thread.daemon = True
+    ping_thread.start()
+    
+    # Run the bot
     run_bot()
